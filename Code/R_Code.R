@@ -32,12 +32,12 @@ df2014 <- df2014[complete.cases(df2014),]
 
 #Remove Year and Country as they don't relate. Status remove for now for corr plots
 #Then we will come back and see if we can use it as an indicator variable if plausible
-df2014 <- subset(df2014,select = -c(1,2,3))
+df2014corr <- subset(df2014,select = -c(1,2,3))
 
 #corrplot
 #Life expectancy is corr with 0.5+ Adult Mortality, Alcohol, BMI, HIV/AIDS
 #Income.composition, Schooling
-SP_matrix = cor(df2014[,sapply(df2014, is.numeric)])
+SP_matrix = cor(df2014corr[,sapply(df2014corr, is.numeric)])
 corrplot(SP_matrix, type="upper", method = "number",
          sig.level = 0.05, tl.cex = 0.55, number.cex=0.53)
 
@@ -65,7 +65,7 @@ df2014$Log.Alcohol = log(df2014$Alcohol)
 df2014$Log.HIV.AIDS = log(df2014$HIV.AIDS)
 
 #Check Correlation matrix
-SP_matrix2 = cor(df2014[c(1,20,21)])
+SP_matrix2 = cor(df2014[c(4,23,24)])
 corrplot(SP_matrix2, type="upper", method = "number",
          sig.level = 0.05, tl.cex = 0.75, number.cex=0.75)
 
@@ -80,10 +80,14 @@ pairs(~Life.expectancy + Adult.Mortality + Log.Alcohol + BMI + Log.HIV.AIDS
 #for HIV/AIDS and Alcohol to -0.78,0.56 respectively
 #Will move forward with these log transformation for our model
 #Remove non-log variables from our df
-df2014 <- subset(df2014, select = -c(4,13))
+df2014 <- subset(df2014, select = -c(7,16))
+
+#Create new Corr matrix
+df2014corr2 <- df2014
+df2014corr2 <- subset(df2014corr2,select = -c(1,2,3))
 
 #Rerun correlation matrix and check out the new relationships
-SP_matrix3 = cor(df2014[,sapply(df2014, is.numeric)])
+SP_matrix3 = cor(df2014corr2[,sapply(df2014corr2, is.numeric)])
 corrplot(SP_matrix3, type="upper", method = "number",
          sig.level = 0.05, tl.cex = 0.55, number.cex=0.53)
 
@@ -94,8 +98,8 @@ corrplot(SP_matrix3, type="upper", method = "number",
 
 
 
-###Model 1 Full Model after analysis
-fit1 <- lm(Life.expectancy~Adult.Mortality + BMI + Income.composition.of.resources
+###Model 1 Full Model after analysis INCLUDING Status
+fit1 <- lm(Life.expectancy~Adult.Mortality + BMI + Status + Income.composition.of.resources
           + Schooling + Log.Alcohol + Log.HIV.AIDS, data = df2014)
 
 #Check QQPLOT for normality Assumption. Seems good
@@ -130,11 +134,11 @@ AIC(fit1)
 #BIC
 BIC(fit1)
 
-#Adj R-Squared = 0.8671
-#ASE = 9.315
-#AIC = 680.105
-#BIC = 703.106
-#Adult.Mort, Income.comp, Log.HIV Only significant terms
+#Adj R-Squared = 0.8702
+#ASE = 9.021
+#AIC = 677.910
+#BIC = 703.787
+#Adult.Mort, Income.comp, Log.HIV, Log.Alc, Status Only significant terms
 #Next model we will fit without observation 39 and see what we get.
 
 
@@ -143,7 +147,7 @@ BIC(fit1)
 #39 = Equitorial Guinea. We will fit this model without this point and see how
 #our summaries change
 df2014_influential <- df2014[-39,]
-fit2 <- lm(Life.expectancy~Adult.Mortality + BMI + Income.composition.of.resources
+fit2 <- lm(Life.expectancy~Adult.Mortality + BMI + Status + Income.composition.of.resources
            + Schooling + Log.Alcohol + Log.HIV.AIDS, data = df2014_influential)
 
 #Summary 
@@ -160,16 +164,16 @@ AIC(fit2)
 BIC(fit2)
 
 #Adj R-Squared = 0.8725
-#ASE = 8.849
-#AIC = 668.3597
-#BIC = 691.3
-#Adult.Mort, Income.comp, Log.HIV Only significant terms
+#ASE = 8.568
+#AIC = 666.171
+#BIC = 691.979
+#Adult.Mort, Status, Income.comp, Log.Alc, Log.HIV Only significant terms
 #Same predictors were signficant, nothing changed from that aspect
 
 
 
 ### Model 3. Without Income.Comp Predictor
-fit3 <- lm(Life.expectancy~Adult.Mortality + BMI + Schooling 
+fit3 <- lm(Life.expectancy~Adult.Mortality + BMI + Status + Schooling 
            + Log.Alcohol + Log.HIV.AIDS, data = df2014)
 
 #ASE
@@ -185,18 +189,18 @@ BIC(fit3)
 #Summary
 summary(fit3)
 
-#ASE = 11.358
-#AIC = 704.081
-#BIC = 724.208
-#Adj R^2 = 0.9383
-#Adult.Mortal, Schooling, Log.Alc, Log.HIV are significant. BMI is not.
+#ASE = 10.674
+#AIC = 697.940
+#BIC = 720.942
+#Adj R^2 = 0.8477
+#Adult.Mortal, Status, Schooling, Log.Alc, Log.HIV are significant. BMI is not.
 #Might want to consider not including BMI in overall model
 #Model3 is weaker than the Model1 and 2; however, more terms are significant
 
 
 
 ### Model 4 without Log.HIV
-fit4 <- lm(Life.expectancy~Adult.Mortality + BMI + Schooling 
+fit4 <- lm(Life.expectancy~Adult.Mortality + Status + BMI + Schooling 
            + Log.Alcohol + Income.composition.of.resources, data = df2014)
 
 #ASE
@@ -212,18 +216,17 @@ BIC(fit4)
 #Summary
 summary(fit4)
 
-#ASE = 10.70131
-#AIC = 696.280
-#BIC = 716.406
-#Adj R^2 = 0.8485
+#ASE = 10.504
+#AIC = 695.844
+#BIC = 718.845
+#Adj R^2 = 0.8501
 #Adult.Mortal, Income.composition are ONLY significant terms
-#Model4 has least amount of significant terms, but is stronger than Model3
-#but than the Model1 and Model2.
+#Worst Model
 
 
 
 ### Model 5 without Schooling, include all other predictors
-fit5 <- lm(Life.expectancy~Adult.Mortality + BMI + Income.composition.of.resources
+fit5 <- lm(Life.expectancy~Adult.Mortality + BMI + Status + Income.composition.of.resources
            + Log.Alcohol + Log.HIV.AIDS, data = df2014)
 
 #ASE
@@ -239,17 +242,18 @@ BIC(fit5)
 #Summary
 summary(fit5)
 
-#ASE = 9.321
-#AIC = 678.189
-#BIC = 698.316
-#Adj R^2 = 0.8681
-#Adult Mort, Income.comp, and Log HIV.AIDS is most significant in this model
+#ASE = 9.022
+#AIC = 675.920
+#BIC = 698.921
+#Adj R^2 = 0.8713
+#Adult Mort, Income.comp, Status, Log Alc and Log HIV.AIDS is most significant
+
 
 ### Model 6 without BMI and Schooling
 ##Schooling is highly correlated with many other predictors
 ##BMI seems to not have much effect on response or predictors so we will leave out
-fit6 <- lm(Life.expectancy~Adult.Mortality + Income.composition.of.resources
-           + Log.HIV.AIDS + Log.Alcohol, data = df2014new)
+fit6 <- lm(Life.expectancy~Adult.Mortality + Status + Income.composition.of.resources
+           + Log.HIV.AIDS + Log.Alcohol, data = df2014)
 
 #ASE
 ase = mean(fit6$residuals^2)
@@ -264,12 +268,11 @@ BIC(fit6)
 #Summary
 summary(fit6)
 
-#ASE = 9.348
-#AIC = 676.566
-#BIC = 693.817
-#Adj R^2 = 0.8688
-#All terms are significant except Log.Alc at 0.068. We are confident in moving
-#forward with Model 6, so we want to re-run our residual diagnostics/assumptions
+#ASE = 9.03
+#AIC = 674.083
+#BIC = 694.209
+#Adj R^2 = 0.8722
+#All terms are significant. Comfortable with model 6
 
 #Check QQPLOT for normality Assumption. Seems good
 ols_plot_resid_qq(fit6)
@@ -293,7 +296,7 @@ ols_plot_cooksd_chart(fit6)
 
 
 ### Model 7 without influential point 39
-fit7 <- lm(Life.expectancy~Adult.Mortality + Income.composition.of.resources
+fit7 <- lm(Life.expectancy~Adult.Mortality + Status + Income.composition.of.resources
            + Log.HIV.AIDS + Log.Alcohol, data = df2014_influential)
 
 #ASE
@@ -310,10 +313,10 @@ BIC(fit7)
 summary(fit7)
 car::vif(fit7)
 
-#ASE = 8.877
-#AIC = 664.777
-#BIC = 681.982
-#Adj R^2 = 0.8742
+#ASE = 8.590
+#AIC = 662.496
+#BIC = 682.569
+#Adj R^2 = 0.8773
 #VIF numbers look good. Observation 4 and 107 display Cooks D of about 0.13 which
 #is not too egregious for our analysis
 
@@ -341,42 +344,42 @@ ols_plot_cooksd_chart(fit7)
 #### MODEL REVISION
 #Now let's go back and revise our old data set and only remove NA's from the
 #predictors that we want to include in our model
-df <- df %>% filter(!is.na(Alcohol))
-df <- df %>% filter(!is.na(Income.composition.of.resources))
-df <- df %>% filter(!is.na(Schooling))
-df <- df %>% filter(!is.na(Adult.Mortality))
+dfnew <- df %>% filter(!is.na(Alcohol))
+dfnew <- dfnew %>% filter(!is.na(Income.composition.of.resources))
+dfnew <- dfnew %>% filter(!is.na(Schooling))
+dfnew <- dfnew %>% filter(!is.na(Adult.Mortality))
 
 #subset to show only 2014
-df2014new <- df[df['Year'] == 2014,]
+df2014new <- dfnew[dfnew['Year'] == 2014,]
 
 #Check NA's and make sure you included the correct ones
 gg_miss_var(df2014new)
 
-#Filter out Country, Year, and Status from DF
-df2014new <- subset(df2014new, select = -c(1,2,3))
+#Filter out Country and Year from DF
+df2014new <- subset(df2014new, select = -c(1,2))
 
 #Create Log Variables of Alcohol and HIV
 df2014new$Log.Alcohol <- log(df2014new$Alcohol)
 df2014new$Log.HIV.AIDS <- log(df2014new$HIV.AIDS)
 
 #Filter our normal Alcohol and HIV values
-df2014new <- subset(df2014new, select = -c(4,13))
+df2014new <- subset(df2014new, select = -c(5,14))
 
 
-###IMPORTANT NOTE: our new Dataframe has 171 observations as opposed to the
-#initial 130 observations we had for our models that we ran above.
+###IMPORTANT NOTE: our new Dataframe has 172 observations as opposed to the
+#initial 131 observations we had for our models that we ran above.
 #The reason we have 41 more observations is because I only removed specific
 #NA values from the 4 predictors we ended up using after doing model checks
 #I believe the df2014new is a better represenation of our models vs the ones above
 #Will run the SAME analysis and fit for df2014new
 
 #Rerun correlation matrix and check out the new relationships
-SP_matrix4 = cor(df2014new[c(1,2,16,18,19)])
+SP_matrix4 = cor(df2014new[c(2,3,17,19,20)])
 corrplot(SP_matrix4, type="upper", method = "number",
          sig.level = 0.05, tl.cex = 0.75, number.cex=0.75)
 
 #Refit our chosen model with new df2014new data frame
-fit8 <- lm(Life.expectancy~Adult.Mortality + Income.composition.of.resources
+fit8 <- lm(Life.expectancy~Adult.Mortality + Status + Income.composition.of.resources
            + Log.HIV.AIDS + Log.Alcohol, data = df2014new)
 
 #ASE
@@ -393,10 +396,10 @@ BIC(fit8)
 summary(fit8)
 car::vif(fit8)
 
-##ASE = 9.438
-#AIC = 886.205
-#BIC = 905.090
-#Adj R^2 = 0.8652
+##ASE = 9.081
+#AIC = 881.575
+#BIC = 903.607
+#Adj R^2 = 0.8657
 #VIF numbers look good.
 #ALL terms are significant
 #When we included some of the NA countries that were excluded from our initial model
@@ -426,7 +429,7 @@ ols_plot_cooksd_chart(fit8)
 
 ##Re-run model without this point
 df2014new_influential <- df2014new[-49,]
-fit9 <- lm(Life.expectancy~Adult.Mortality + Income.composition.of.resources
+fit9 <- lm(Life.expectancy~Adult.Mortality + Status + Income.composition.of.resources
            + Log.HIV.AIDS + Log.Alcohol, data = df2014new_influential)
 
 #ASE
@@ -443,15 +446,13 @@ BIC(fit9)
 summary(fit9)
 car::vif(fit9)
 
-##ASE = 9.075
-#AIC = 874.412
-#BIC = 893.262
-#Adj R^2 = 0.8652
+##ASE = 8.733
+#AIC = 869.852
+#BIC = 891.843
+#Adj R^2 = 0.8695
 #VIF numbers look good.
 #ALL terms are significant
-#When we included some of the NA countries that were excluded from our initial model
-#selection, our AIC and BIC increased by 200 each roughly. ASE rose by 0.2
-#I believe we need to go with fit8 because it incorporates most of the 2014 data
+
 
 ###ASSUMPTION checks of Fit9 (Final Model without influential point)
 
@@ -462,9 +463,9 @@ ols_plot_cooksd_chart(fit9)
 
 
 
-### Model 10 removing observations 4 and 137 now
+### Model 10 removing observations 4 and 137
 df2014new_influential2 <- df2014new_influential[-c(4,137),]
-fit10 <- lm(Life.expectancy~Adult.Mortality + Income.composition.of.resources
+fit10 <- lm(Life.expectancy~Adult.Mortality + Status + Income.composition.of.resources
            + Log.HIV.AIDS + Log.Alcohol, data = df2014new_influential2)
 
 #ASE
@@ -481,10 +482,10 @@ BIC(fit10)
 summary(fit10)
 car::vif(fit10)
 
-##ASE = 8.232
-#AIC = 847.864
-#BIC = 866.644
-#Adj R^2 = 0.8682
+##ASE = 7.852
+#AIC = 841.862
+#BIC = 863.772
+#Adj R^2 = 0.8735
 #VIF numbers look good.
 #ALL terms are significant
 #Let's just view the Cook's D plot now and see. All observations of Cook'D is
