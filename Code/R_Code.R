@@ -15,9 +15,6 @@ df <- read.csv(file = "Life_Expectancy_Data.csv", header=TRUE)
 #Subset df so just Year = 2014 data is shown
 df2014 <- df[df['Year'] == 2014,]
 
-#Export DF to .xlsx for reference
-#write.xlsx(df2014, "C:/Users/Aurian/Documents/SMU_Git/MSDS/STATS6372/Project1/Data.xlsx")
-
 #Check out summary statistics
 head(df2014)
 summary(df2014)
@@ -71,11 +68,22 @@ corrplot(SP_matrix2, type="upper", method = "number",
          sig.level = 0.05, tl.cex = 0.75, number.cex=0.75)
 
 #Check Pair plot of new log vars
-pairs(~Life.expectancy + Adult.Mortality + Log.Alcohol + BMI + Log.HIV.AIDS
+pairs(~Life.expectancy + Adult.Mortality + BMI + Log.Alcohol + Log.HIV.AIDS
       + Income.composition.of.resources + Schooling,
       data = df2014,
       col = "blue",
       main = "Scatterplot Distribution of Explanatory and Response Variables")
+
+###Check out BMI, LogAlc and LogHIV separately to see general shape of the diagram
+#BMI Seems to be quadratic, will leave out of model for this question of interest
+#because having quadratic terms muddies up the levels of interpretation
+df2014 %>% ggplot(aes(x=BMI,y=Life.expectancy)) + geom_point() + geom_smooth() +ggtitle("BMI vs Life Expectancy")
+
+#LogAlcohol shows general postive linear trend regardless of points at 0. Will keep
+df2014 %>% ggplot(aes(x=Log.Alcohol,y=Life.expectancy)) + geom_point() + geom_smooth() +ggtitle("Log Alcohol vs Life Expectancy")
+
+#LogHIV shows general negative linear trend regardless of points at 0. Will keep
+df2014 %>% ggplot(aes(x=Log.HIV.AIDS,y=Life.expectancy)) + geom_point() + geom_smooth() +ggtitle("Log HIV/AIDS vs Life Expectancy")
 
 #Based on the above anaysis, both correlation coefficients -0.62, 0.53 increased 
 #for HIV/AIDS and Alcohol to -0.78,0.56 respectively
@@ -353,6 +361,9 @@ dfnew <- dfnew %>% filter(!is.na(Adult.Mortality))
 #subset to show only 2014
 df2014new <- dfnew[dfnew['Year'] == 2014,]
 
+#Export DF to .xlsx for reference
+#write.xlsx(df2014new, "C:/Users/Aurian/Documents/SMU_Git/MSDS/STATS6372/Project1/Data2014.xlsx")
+
 #Check NA's and make sure you included the correct ones
 gg_miss_var(df2014new)
 
@@ -465,3 +476,109 @@ ols_plot_cooksd_chart(fit9)
 
 
 ### WE ARE MOVING FORWARD WITH MODEL 8. WILL USE MODEL 9 as a reference point
+### Renaming fit8 to fit10 for readability purposes. It is the same model.
+fit10 <- lm(Life.expectancy~Adult.Mortality + Status + Income.composition.of.resources
+           + Log.HIV.AIDS + Log.Alcohol, data = df2014new)
+
+### Summary Stats
+LifeStats <- df2014new %>%
+   select(Life.expectancy)%>%
+   summarize(Count = n(), Mean = mean(Life.expectancy), SD = sd(Life.expectancy),
+             Max = max(Life.expectancy), Min = min(Life.expectancy))
+
+AdultStats <- df2014new %>%
+   select(Adult.Mortality)%>%
+   summarize(Count = n(), Mean = mean(Adult.Mortality), SD = sd(Adult.Mortality),
+             Max = max(Adult.Mortality), Min = min(Adult.Mortality))
+
+IncomeStats <- df2014new %>%
+   select(Income.composition.of.resources)%>%
+   summarize(Count = n(), Mean = mean(Income.composition.of.resources), SD = sd(Income.composition.of.resources),
+             Max = max(Income.composition.of.resources), Min = min(Income.composition.of.resources))
+
+AlcoholStats <- df2014new %>%
+   select(Log.Alcohol)%>%
+   summarize(Count = n(), Mean = mean(Log.Alcohol), SD = sd(Log.Alcohol),
+             Max = max(Log.Alcohol), Min = min(Log.Alcohol))
+
+HIVStats <- df2014new %>%
+   select(Log.HIV.AIDS)%>%
+   summarize(Count = n(), Mean = mean(Log.HIV.AIDS), SD = sd(Log.HIV.AIDS),
+             Max = max(Log.HIV.AIDS), Min = min(Log.HIV.AIDS))
+
+#Creating a DF to display all the stats
+Summary_df <- rbind(LifeStats,AdultStats,IncomeStats,AlcoholStats,HIVStats)
+Summary_df$Labels <- c("Life.expectancy", "Adult.Mortality", "Income.composition.of.resources", "Log.Alcohol", "Log.HIV.AIDS")
+
+#Final Summary Stats
+Summary_df <- Summary_df %>%
+   select(Labels,Count,Mean,SD,Min,Max)
+
+
+
+### TRAIN TEST SPLITS 70/30
+
+#Store test ASE into matrix
+ASEmatrix <- matrix(1:200, nrow = 200, ncol = 1)
+
+for(i in 1:200){
+   
+   #Train/test split
+   indices <- sample(dim(df2014new)[1],.7*dim(df2014new)[1])
+   trainset <- df2014new[indices,]
+   testset <- df2014new[-indices,]
+   
+   #Train Fit
+   fit10 <- lm(Life.expectancy~Adult.Mortality + Status + Income.composition.of.resources
+               + Log.HIV.AIDS + Log.Alcohol, data = trainset)
+   testpredict <- predict.lm(fit10,testset)
+   testset$testpredict <- testpredict
+   predictiondf <- testset %>% select(Life.expectancy, testpredict)
+   
+   #Compute residuals and residuals^2
+   predictiondf$residuals <- predictiondf$Life.expectancy - predictiondf$testpredict
+   predictiondf$residuals.squared <- predictiondf$residuals^2
+   Sum_squared_errors <- sum(predictiondf$residuals.squared)
+   
+   #ASE. Divide by 52 because that is total obs in test set split
+   Test_ASE <- Sum_squared_errors/52
+   
+   #Store ASE into matrix
+   ASEmatrix[i,1] <- Test_ASE
+}
+
+#Average out the Test ASE and plot. Avg ASE = 10.07
+Avg.Test.ASE <- colMeans(ASEmatrix)
+plot(ASEmatrix, main = "Average Test ASE", ylab = "TEST ASE", xlab = "Iterations")
+abline(h=Avg.Test.ASE, col = "red", lwd=3)
+
+#Confidence interval of coefficients
+confint(fit10)
+summary(fit10)
+
+#ASE
+ase = mean(fit10$residuals^2)
+ase
+
+#AIC
+AIC(fit10)
+
+#BIC
+BIC(fit10)
+
+#VIF
+car::vif(fit10)
+
+### Final Model for Developing and Developed
+
+#Developing:
+   #Life Expectancy = 55.682 - 0.018Adult.Mortality -1.963StatusDeveloping +
+   #26.827Income.comp.of.resources -1.423LogHIVAIDS + 0.226LogAlcohol
+
+#Developed:
+   #Life Expectancy = 53.7184 - 0.018Adult.Mortality -1.963StatusDeveloping +
+   #26.827Income.comp.of.resources -1.423LogHIVAIDS + 0.226LogAlcohol
+
+
+
+#####QUESTION 1 PART 2 MODEL FITTING WITH FEATURE SELECTION
