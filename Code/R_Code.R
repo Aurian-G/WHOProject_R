@@ -5,6 +5,7 @@ library(corrplot)
 library(xlsx)
 library(olsrr)
 
+######INCLUDE SUMMARY STATS. LOOK FOR TYPOS?
 #Set WD
 setwd("C:/Users/Aurian/Documents/SMU_Git/MSDS/STATS6372/Project1")
 
@@ -24,7 +25,7 @@ str(df2014)
 
 #Check NA's
 #Population has 41 missing and GDP with 28
-gg_miss_var(df)
+gg_miss_var(df2014)
 
 ##Corr plots - Initial EDA
 #Filter NA's just to see general distributions
@@ -82,7 +83,7 @@ pairs(~Life.expectancy + Adult.Mortality + Log.Alcohol + BMI + Log.HIV.AIDS
 #Remove non-log variables from our df
 df2014 <- subset(df2014, select = -c(7,16))
 
-#Create new Corr matrix
+#Create new Corr matrix with out categorical variables and year
 df2014corr2 <- df2014
 df2014corr2 <- subset(df2014corr2,select = -c(1,2,3))
 
@@ -431,7 +432,7 @@ ols_plot_cooksd_chart(fit8)
 df2014new_influential <- df2014new[-49,]
 fit9 <- lm(Life.expectancy~Adult.Mortality + Status + Income.composition.of.resources
            + Log.HIV.AIDS + Log.Alcohol, data = df2014new_influential)
-
+   
 #ASE
 ase = mean(fit9$residuals^2)
 ase
@@ -463,33 +464,4 @@ ols_plot_cooksd_chart(fit9)
 
 
 
-### Model 10 removing observations 4 and 137
-df2014new_influential2 <- df2014new_influential[-c(4,137),]
-fit10 <- lm(Life.expectancy~Adult.Mortality + Status + Income.composition.of.resources
-           + Log.HIV.AIDS + Log.Alcohol, data = df2014new_influential2)
-
-#ASE
-ase = mean(fit10$residuals^2)
-ase
-
-#AIC
-AIC(fit10)
-
-#BIC
-BIC(fit10)
-
-#Summary
-summary(fit10)
-car::vif(fit10)
-
-##ASE = 7.852
-#AIC = 841.862
-#BIC = 863.772
-#Adj R^2 = 0.8735
-#VIF numbers look good.
-#ALL terms are significant
-#Let's just view the Cook's D plot now and see. All observations of Cook'D is
-#below 0.05 .... May want to consider either Fit9 or Fit10 as our final model
-ols_plot_cooksd_chart(fit10)
-
-##### MODEL9 or MODEL10?
+### WE ARE MOVING FORWARD WITH MODEL 8. WILL USE MODEL 9 as a reference point
