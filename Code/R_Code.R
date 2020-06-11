@@ -351,15 +351,21 @@ ols_plot_cooksd_chart(fit7)
 
 
 #### MODEL REVISION
-#Now let's go back and revise our old data set and only remove NA's from the
+#Now let's go back and revise our 2014 data set and only remove NA's from the
 #predictors that we want to include in our model
-dfnew <- df %>% filter(!is.na(Alcohol))
-dfnew <- dfnew %>% filter(!is.na(Income.composition.of.resources))
-dfnew <- dfnew %>% filter(!is.na(Schooling))
-dfnew <- dfnew %>% filter(!is.na(Adult.Mortality))
+df2014 <- df2014 %>% filter(!is.na(Income.composition.of.resources))
+df2014 <- df2014 %>% filter(!is.na(Alcohol))
+df2014 <- df2014 %>% filter(!is.na(Schooling))
+df2014new <- df2014 %>% filter(!is.na(Adult.Mortality))
 
-#subset to show only 2014
-df2014new <- dfnew[dfnew['Year'] == 2014,]
+#LIST OF NA's REMOVED, 11 total
+#South Sudan, Coute d' Ivor, Dem Republic of Korea/Congo, Czechia, Rep of Korea,
+#Somalia, Tanzania, Republic of Moldova, Great Britain, Ireland
+#Africa - 5/54 (11%)
+#Europe - 4/44 (11%)
+#Asia - 2/48 (4.2%)
+#We can move forward without there countries as they don't represent any region
+#specifically or egregiously. 
 
 #Export DF to .xlsx for reference
 #write.xlsx(df2014new, "C:/Users/Aurian/Documents/SMU_Git/MSDS/STATS6372/Project1/Data2014.xlsx")
@@ -547,7 +553,7 @@ for(i in 1:200){
    ASEmatrix[i,1] <- Test_ASE
 }
 
-#Average out the Test ASE and plot. Avg ASE = 10.07
+#Average out the Test ASE and plot. Avg ASE = 10.02
 Avg.Test.ASE <- colMeans(ASEmatrix)
 plot(ASEmatrix, main = "Average Test ASE", ylab = "TEST ASE", xlab = "Iterations")
 abline(h=Avg.Test.ASE, col = "red", lwd=3)
