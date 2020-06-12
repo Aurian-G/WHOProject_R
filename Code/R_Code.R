@@ -77,13 +77,22 @@ pairs(~Life.expectancy + Adult.Mortality + BMI + Log.Alcohol + Log.HIV.AIDS
 ###Check out BMI, LogAlc and LogHIV separately to see general shape of the diagram
 #BMI Seems to be quadratic, will leave out of model for this question of interest
 #because having quadratic terms muddies up the levels of interpretation
-df2014 %>% ggplot(aes(x=BMI,y=Life.expectancy)) + geom_point() + geom_smooth() +ggtitle("BMI vs Life Expectancy")
+df2014 %>% ggplot(aes(x=BMI,y=Life.expectancy)) + 
+   geom_point() + 
+   geom_smooth() +
+   ggtitle("BMI vs Life Expectancy")
 
 #LogAlcohol shows general postive linear trend regardless of points at 0. Will keep
-df2014 %>% ggplot(aes(x=Log.Alcohol,y=Life.expectancy)) + geom_point() + geom_smooth() +ggtitle("Log Alcohol vs Life Expectancy")
+df2014 %>% ggplot(aes(x=Log.Alcohol,y=Life.expectancy)) + 
+   geom_point() + 
+   geom_smooth() +
+   ggtitle("Log Alcohol vs Life Expectancy")
 
 #LogHIV shows general negative linear trend regardless of points at 0. Will keep
-df2014 %>% ggplot(aes(x=Log.HIV.AIDS,y=Life.expectancy)) + geom_point() + geom_smooth() +ggtitle("Log HIV/AIDS vs Life Expectancy")
+df2014 %>% ggplot(aes(x=Log.HIV.AIDS,y=Life.expectancy)) + 
+   geom_point() + 
+   geom_smooth() +
+   ggtitle("Log HIV/AIDS vs Life Expectancy")
 
 #Based on the above anaysis, both correlation coefficients -0.62, 0.53 increased 
 #for HIV/AIDS and Alcohol to -0.78,0.56 respectively
@@ -353,7 +362,7 @@ ols_plot_cooksd_chart(fit7)
 #### MODEL REVISION
 #Now let's go back and revise our 2014 data set and only remove NA's from the
 #predictors that we want to include in our model
-df2014 <- df2014 %>% filter(!is.na(Income.composition.of.resources))
+df2014 <- df[df['Year'] == 2014,] %>% filter(!is.na(Income.composition.of.resources))
 df2014 <- df2014 %>% filter(!is.na(Alcohol))
 df2014 <- df2014 %>% filter(!is.na(Schooling))
 df2014new <- df2014 %>% filter(!is.na(Adult.Mortality))
@@ -361,7 +370,7 @@ df2014new <- df2014 %>% filter(!is.na(Adult.Mortality))
 #LIST OF NA's REMOVED, 11 total
 #South Sudan, Coute d' Ivor, Dem Republic of Korea/Congo, Czechia, Rep of Korea,
 #Somalia, Tanzania, Republic of Moldova, Great Britain, Ireland
-#Africa - 5/54 (11%)
+#Africa - 5/54 (9.3%)
 #Europe - 4/44 (11%)
 #Asia - 2/48 (4.2%)
 #We can move forward without there countries as they don't represent any region
@@ -535,9 +544,9 @@ for(i in 1:200){
    testset <- df2014new[-indices,]
    
    #Train Fit
-   fit10 <- lm(Life.expectancy~Adult.Mortality + Status + Income.composition.of.resources
+   fit11 <- lm(Life.expectancy~Adult.Mortality + Status + Income.composition.of.resources
                + Log.HIV.AIDS + Log.Alcohol, data = trainset)
-   testpredict <- predict.lm(fit10,testset)
+   testpredict <- predict.lm(fit11,testset)
    testset$testpredict <- testpredict
    predictiondf <- testset %>% select(Life.expectancy, testpredict)
    
@@ -574,6 +583,11 @@ BIC(fit10)
 
 #VIF
 car::vif(fit10)
+
+##ASE = 9.081
+#AIC = 881.575
+#BIC = 903.607
+#Adj R^2 = 0.8657
 
 ### Final Model for Developing and Developed
 
