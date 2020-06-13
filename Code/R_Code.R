@@ -377,7 +377,7 @@ df2014new <- df2014 %>% filter(!is.na(Adult.Mortality))
 #specifically or egregiously. 
 
 #Export DF to .xlsx for reference
-#write.xlsx(df2014new, "C:/Users/Aurian/Documents/SMU_Git/MSDS/STATS6372/Project1/Data2014.xlsx")
+#write.xlsx(df2014, "C:/Users/Aurian/Documents/SMU_Git/WHO_Project1_STATS6372/WHOProject1/Data/WHO_2014_Transformed_Data.xlsx")
 
 #Check NA's and make sure you included the correct ones
 gg_miss_var(df2014new)
@@ -419,9 +419,11 @@ AIC(fit8)
 #BIC
 BIC(fit8)
 
-###Summary
-summary(fit8)
+#VIF
 car::vif(fit8)
+
+###SUMMARY
+summary(fit8)
 
 ##ASE = 9.081
 #AIC = 881.575
@@ -450,8 +452,8 @@ ols_plot_resid_stud(fit8)
 #Studentized Residual vs Leverage plot. Observation 49
 ols_plot_resid_lev(fit8)
 
-#Cook's D. Observation 49 is a still a very egregious point. This is probably the
-#same 2014 point be filtered out in previous analysis
+#Cook's D. Observation 49 is a still a very egregious point. Will keep since we don't
+#have a good enough reason to not include it otherwise
 ols_plot_cooksd_chart(fit8)
 
 ##Re-run model without this point
@@ -592,13 +594,14 @@ car::vif(fit10)
 ### Final Model for Developing and Developed
 
 #Developing:
-   #Life Expectancy = 55.682 - 0.018Adult.Mortality -1.963StatusDeveloping +
+   #Life Expectancy = 55.682 - 0.018Adult.Mortality +
    #26.827Income.comp.of.resources -1.423LogHIVAIDS + 0.226LogAlcohol
 
 #Developed:
-   #Life Expectancy = 53.7184 - 0.018Adult.Mortality -1.963StatusDeveloping +
+   #Life Expectancy = 53.7184 - 0.018Adult.Mortality +
    #26.827Income.comp.of.resources -1.423LogHIVAIDS + 0.226LogAlcohol
 
 
 
 #####QUESTION 1 PART 2 MODEL FITTING WITH FEATURE SELECTION
+#####CHECK SAS FOR FEATURE SELECTION
